@@ -1,26 +1,65 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
+import { BrowserRouter as Router, Route} from 'react-router-dom';
+import Header from './components/layout/Header';
+import Tasks from './components/Tasks/Tasks';
+import AddTask from './components/Tasks/AddTask';
+import About from './components/pages/About';
+// import uuid from 'uuid';
+import axios from 'axios';
+
 import './App.css';
 
 class App extends Component {
+  state = {
+    tasks: [
+      
+    ]
+  }
+
+  componentDidMount() {
+    axios.get('https://jsonplaceholder.typicode.com/todos?_limit=8')
+      .then(res => this.setState({ tasks: res.data }))
+  }
+
+  markComplete = (id) => {
+    this.setState({ tasks: this.state.tasks.map(task => {
+      if(task.id === id) {
+        task.completed = !task.completed
+      }
+      return task;
+    }) });
+  }
+
+  delTask = (id) => {
+    axios.delete(`https://jsonplaceholder.typicode.com/todos/${id}`)
+      .then(res => this.setState({ tasks: [...this.state.tasks.filter(task => task.id !== id)] }));
+  }
+
+  addTask = (title) => {
+    axios.post('https://jsonplaceholder.typicode.com/todos', {
+      title,
+      completed: false
+    })
+      .then(res => this.setState({ tasks:
+      [...this.state.tasks, res.data] }));
+  }
+
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
+      <Router>
+        <div className="App">
+          <div className='container'>
+            <Header />
+            <Route exact path="/" render={props => (
+              <React.Fragment>
+                <AddTask addTask={this.addTask} />
+                <Tasks tasks={this.state.tasks} markComplete={this.markComplete} delTask={this.delTask} />
+              </React.Fragment>
+            )} />
+            <Route path="/about" component={About} />
+          </div>
+        </div>
+      </Router>
     );
   }
 }
